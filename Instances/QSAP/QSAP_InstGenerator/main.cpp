@@ -1,0 +1,193 @@
+/*  This file generate instance for the Quadratic Semi-Assigment Problem
+    following the description in section 4.3.1 in Rostami et al. (2018) - 
+    A convex reformulation and an outer approximation for a class of binary quadratic program
+    by: Allyson Silva
+*/
+ 
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <cmath>
+#include "bibrand2.h"
+ 
+using namespace std;
+ 
+int main(int argc, char *argv[]){
+/*
+	fstream fcin;
+	cout << "Opening file..." << endl;
+	string instName = argv[1];
+	string address;
+
+	address = instName + ".txt";
+	cout << address << endl;
+	//Open file
+	fcin.open(address.c_str(), ios::in );
+
+	//Check if the file is open
+	if (!fcin.is_open()){
+		cout << "Error: Could not open the file!" << endl;
+		return (0);
+	}
+	cout << "Reading data..." << endl;
+
+    ofstream fcout;
+ 
+    //Open file
+    stringstream ss;
+    ss << "../" << instName << ".dat";
+    string filename = ss.str();
+    fcout.open( filename.c_str() , ios::out );
+    
+    //If error, exit program
+    if (!fcout.is_open()) return (0);
+
+	int M, N, v;
+
+	fcin >> M >> N >> v;
+	fcout << M << " " << N << " " << v << endl;
+
+	//Traffic
+	vector< vector<int> > t(M, vector<int>(M,0));
+	for(int i = 0; i < M; i++){
+		for(int j = 0; j < M; j++){
+			fcin >> t[i][j];
+			fcout << t[i][j] << "\t";
+		}
+		fcout << endl;
+	}
+
+	//Distance
+	double sumDist = 0;
+	int cont = N * (N-1);
+
+	vector< vector<int> > d(N, vector<int>(N,0));
+	for(int h = 0; h < N; h++){
+		for(int k = 0; k < N; k++){
+			fcin >> d[h][k];
+			sumDist += d[h][k];
+		}
+	}
+	sumDist = round(sumDist/cont);
+
+	for(int h = 0; h < N; h++){
+		for(int k = 0; k < N; k++){
+			if(h != k) fcout << d[h][k] << "\t";
+			else fcout << sumDist << "\t";
+		}
+		fcout << endl;
+	}
+
+	//Cost
+	vector< vector<int> > a(M, vector<int>(N,0));
+	for(int i = 0; i < M; i++){
+		for(int k = 0; k < N; k++){
+			fcin >> a[i][k];
+			fcout << a[i][k] << "\t";
+		}
+		fcout << endl;
+	}
+
+	cout << "Data successfully read!" << endl;
+
+    if(fcout.fail()) {
+        cout << "Fatal error!" << endl;
+        exit(1);        // Aborta programa
+    }
+ 
+    cout << "Closing file..." << endl;
+    fcout.close();
+*/    
+    Bibrand bib(1);
+    
+    int n = atoi(argv[1]); //Instance size = {50, 75, 100, 125, 150}
+    int l = atoi(argv[2]); // {1, 10, 25, 50}
+    
+    int N = ceil(0.7*n);
+    int M = n - N;
+    
+    vector<int> X_(n,0);
+    vector<int> Y_(n,0);
+    vector<bool> isV(n,false);
+    
+    for(int i = 0; i < n; i++){
+        X_[i] = bib.get_rand_ij(1,100);
+        Y_[i] = bib.get_rand_ij(1,100);
+        if(i < N) isV[i] = true;
+    }
+    
+    ofstream fcout;
+    cout << "Opening file..." << endl;
+ 
+    //Open file
+    stringstream ss;
+    ss << "../" << n << "_" << l << ".dat";
+    string filename = ss.str();
+    fcout.open( filename.c_str() , ios::out );
+    
+    //If error, exit program
+    if (!fcout.is_open())
+        return (0);
+    
+    fcout << N << " " << M << " " << 1 << endl;
+    
+    //Flow matrix
+    for(int i = 0; i < N; i++){
+        for(int j = 0; j < N; j++){
+            double flow = bib.get_rand_ij(l,100);
+            
+            if(i != j) fcout << flow << "\t";
+			else fcout << 0 << "\t";
+        }
+        fcout << endl;
+    }
+
+	//Calculate distance matrix
+	vector< vector<double> > allDist(n, vector<double>(n,0));
+	double avgDist = 0;
+	int cont = 0;
+
+	for(int i = 0; i < n; i++){
+        for(int j = 0; j < n; j++){
+			double X = X_[i] - X_[j];
+            double Y = Y_[i] - Y_[j];
+            
+            double dist = pow(X,2) + pow(Y,2);
+            dist = sqrt(dist);
+            allDist[i][j] = round(dist);
+			if(i != j) { avgDist += allDist[i][j]; cont++;}
+			cout << allDist[i][j] << " ";
+		} cout << endl;
+	}
+	avgDist /= cont;
+	for(int i = 0; i < n; i++) allDist[i][i] = round(0.5*avgDist);
+    
+    //Distance matrix
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < M; j++){
+			fcout << allDist[i][j] << "\t";
+        }
+		fcout << endl;
+    }
+    
+    //Cost matrix
+    for(int i = M; i < n; i++){
+        for(int j = 0; j < M; j++){
+            int G = bib.get_rand_ij(l,100);
+            fcout << G*allDist[i][j] << "\t\t";
+        }
+        fcout << endl;
+    }
+ 
+    if(fcout.fail()) {
+            cout << "Fatal error!" << endl;
+            exit(1);        // Aborta programa
+        }
+ 
+    cout << "Closing file..." << endl;
+        fcout.close();
+ 
+    return 0;
+}

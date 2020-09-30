@@ -1,0 +1,225 @@
+/*	This file generate instance for the BiQuadratic Assigment Problem
+	following the algorithm 5.1 proposed in Burkard et al (1993) - On 
+	the	Biquadratic Assignment Problem
+	by: Allyson Silva
+*/
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <fstream>
+#include <sstream>
+#include "bibrand2.h"
+
+using namespace std;
+
+bool compare (int i, int j) { return (i<j); }
+
+int main(int argc, char *argv[]){
+	int n = 10; //Instance size
+	vector<int> perm;
+	for(int i = 0; i < n; i++) perm.push_back(i);
+	random_shuffle(perm.begin(), perm.end());
+	vector<int> delta; //Four integer numbers used to create instance
+	delta.push_back(3);
+	delta.push_back(3);
+	delta.push_back(3);
+	delta.push_back(3);
+
+	vector< vector<int> > A1(n, vector<int> (n,0)); //Matrix A1
+	vector< vector<int> > A2(n, vector<int> (n,0)); //Matrix A2
+	vector< vector<int> > B1(n, vector<int> (n,0)); //Matrix B1
+	vector< vector<int> > B2(n, vector<int> (n,0)); //Matrix B2
+
+	Bibrand bib(2);
+
+	//Step 1
+	for(int i = 0; i < n; i++){
+	for(int j = 0; j < n; j++){
+		//if(i != j){
+			A1[i][j] = delta[0];
+			A2[i][j] = delta[1];
+		//}
+		B1[i][j] = bib.get_rand_ij(1,delta[2]);
+		B2[i][j] = bib.get_rand_ij(1,delta[3]);
+	}}
+
+	//Step 2
+	vector< vector<int> > R1(n, vector<int> (n,0)); //Matrix R1
+	vector< vector<int> > R2(n, vector<int> (n,0)); //Matrix R2
+	vector< vector<bool> > aux(n, vector<bool> (n,false));
+	int bigValue, bigIndexI, bigIndexJ;
+
+	int cont = 0;
+	for(int N1 = 0; N1 < n; N1++){//search for N-th biggest value
+	for(int N2 = 0; N2 < n; N2++){
+		if(N1 == N2) continue;
+		bigValue = 99;
+		bigIndexI = N1;
+		bigIndexJ = N2;
+
+		for(int i = 0; i < n; i++){
+		for(int j = 0; j < n; j++){
+			if(i == j) continue;
+			if(B1[i][j] < bigValue && !aux[i][j]){
+				bigValue = B1[i][j];
+				bigIndexI = i;
+				bigIndexJ = j;
+			}
+		}}
+		R1[bigIndexI][bigIndexJ] = cont;
+		aux[bigIndexI][bigIndexJ] = true;
+		cont++;
+	}
+	}
+
+	cont = 0;
+	for(int N1 = 0; N1 < n; N1++)//search for N-th biggest value
+	for(int N2 = 0; N2 < n; N2++)
+		aux[N1][N2] = false;
+
+	for(int N1 = 0; N1 < n; N1++){//search for N-th biggest value
+	for(int N2 = 0; N2 < n; N2++){
+		if(N1 == N2) continue;
+		bigValue = 99;
+		bigIndexI = N1;
+		bigIndexJ = N2;
+
+		for(int i = 0; i < n; i++){
+		for(int j = 0; j < n; j++){
+			if(i == j) continue;
+			if(B2[i][j] < bigValue && !aux[i][j]){
+				bigValue = B2[i][j];
+				bigIndexI = i;
+				bigIndexJ = j;
+			}
+		}}
+		R2[bigIndexI][bigIndexJ] = cont;
+		aux[bigIndexI][bigIndexJ] = true;
+		cont++;
+	}
+	}
+
+	//Step 3
+	int tam = n*(n-1);
+	vector<int> x1(tam,0);
+	vector<int> y1(tam,0);
+
+	for(int i = 0; i < tam; i++){
+		x1[i] = bib.get_rand_ij(0,delta[0]-1);
+		y1[i] = bib.get_rand_ij(0,delta[1]-1);
+	}
+
+	sort(x1.begin(), x1.end(), compare);
+	sort(y1.begin(), y1.end(), compare);
+
+	//Step 4
+	for(int i = 0; i < n; i++){
+	for(int j = 0; j < n; j++){
+		A1[i][j] -= x1[R1[i][j]];
+		A2[i][j] -= y1[R2[i][j]];
+	}}
+
+	//Step 5
+	vector< vector<int> > P(n, vector<int> (n,0)); //Permutation matrix P
+	for(int i = 0; i < n; i++){
+		P[i][perm[i]] = 1;
+	}
+
+	vector< vector<int> > Pinv(n, vector<int> (n,0)); //Inverse matrix P
+	for(int i = 0; i < n; i++)
+	for(int j = 0; j < n; j++)
+		Pinv[i][j] = P[j][i];
+
+	vector<int> coefPinv(n,0);
+	for(int i = 0; i < n; i++)
+	for(int j = 0; j < n; j++)
+		if(Pinv[j][i] == 1) coefPinv[i] = j;
+
+	//Permute row
+	vector< vector<int> > B1temp(n, vector<int> (n,0)); //Matrix B1 temporary
+	vector< vector<int> > B2temp(n, vector<int> (n,0)); //Matrix B2 temporary
+	for(int i = 0; i < n; i++){
+	for(int j = 0; j < n; j++){
+		B1temp[coefPinv[i]][j] = B1[i][j];
+		B2temp[coefPinv[i]][j] = B2[i][j];
+	}}
+
+	//Permute column
+	for(int i = 0; i < n; i++){
+	for(int j = 0; j < n; j++){
+		B1[j][coefPinv[i]] = B1temp[j][i];
+		B2[j][coefPinv[i]] = B2temp[j][i];
+	}}
+
+	//Step 6
+/*	cout << "B1" << endl;
+	for(int N1 = 0; N1 < n; N1++){
+	for(int N2 = 0; N2 < n; N2++){
+		cout << B1[N1][N2] << " ";
+	}cout << endl;
+	}cout << endl;
+*/
+	ofstream fcout;
+	cout << "Opening file..." << endl;
+
+	//Open file
+	stringstream ss;
+	ss << "bqap_" << n << ".dat";
+	string filename = ss.str();
+	fcout.open( filename.c_str() , ios::out );
+
+	//If error, exit program
+	if (!fcout.is_open())
+		return (0);
+
+	//Calculate optimal cost
+	int cost = 0;
+	for(int i = 0; i < n; i++){
+	for(int j = 0; j < n; j++){
+	for(int m = 0; m < n; m++){
+	for(int p = 0; p < n; p++){
+		cost += A1[i][j]*B1[m][p]*P[i][m]*P[j][p];
+	}}}}
+
+	int cost2 = 0;
+	for(int k = 0; k < n; k++){
+	for(int l = 0; l < n; l++){
+	for(int s = 0; s < n; s++){
+	for(int t = 0; t < n; t++){
+		cost2 += A2[k][l]*B2[s][t]*P[k][s]*P[l][t];
+	}}}}
+
+	cost *= cost2;
+
+	fcout << n << " " << 100 << " " << cost << " " << 1000 << endl;
+
+	for(int i = 0; i < n; i++){
+	for(int j = 0; j < n; j++){
+	for(int k = 0; k < n; k++){
+	for(int l = 0; l < n; l++){
+		fcout << A1[i][j] * A2[k][l] << " ";
+	}fcout << endl;}}}
+
+	for(int m = 0; m < n; m++){
+	for(int p = 0; p < n; p++){
+	for(int s = 0; s < n; s++){
+	for(int t = 0; t < n; t++){
+		fcout << B1[m][p] * B2[s][t] << " ";
+	}fcout << endl;}}}
+
+	fcout << endl;
+	for(int i = 0; i < n; i++)
+		fcout << perm[i] << " ";
+	fcout << endl;
+
+	if(fcout.fail()) {
+			cout << "Fatal error!" << endl;
+			exit(1);		// Aborta programa
+		}
+
+	cout << "Closing file..." << endl;
+		fcout.close();
+
+	return 0;
+}

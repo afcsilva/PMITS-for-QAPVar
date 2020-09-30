@@ -1,0 +1,9 @@
+#include <iostream>
+#include "bibrand2"
+
+using namespace std;
+
+int main(int argc, char *argv[]){
+Bibrand bib(1);
+return 0;
+}

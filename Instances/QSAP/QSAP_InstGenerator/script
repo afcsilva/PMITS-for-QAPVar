@@ -1,0 +1,7 @@
+for a in 1 10 25 50
+do
+	for b in 50 75 100 125 150
+	do
+		./main $b $a
+	done
+done
