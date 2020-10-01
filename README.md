@@ -1,5 +1,6 @@
 # PMITS-for-QAPVar
 Contains the executable files of the Parallel Memetic Iterated Tabu Search (PMITS)* to solve the:
+
 	- Quadratic Assignment Problem (QAP)
 	- Quadratic Bottleneck Assignment Problem (QBAP)
 	- Biquadratic Assignment Problem (BiQAP)
