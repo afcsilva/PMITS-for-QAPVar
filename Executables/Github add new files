@@ -1,0 +1,8 @@
+To update github:
+
+Go to ../
+git add [folder]/
+git status
+git commit -m "[add comment here]"
+git remote add origin https://github.com/afcsilva/PMITS-for-QAPVar.git #Might not be necessary anymore
+git push -u origin master
